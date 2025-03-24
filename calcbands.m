@@ -147,20 +147,20 @@ for i = 1:l_BG
 %}
 
         FBarr = 800;  %Front Barrier Width (A)
-        BBarr = 800; %Back Barrier Width (A)
+        BBarr = 900; %Back Barrier Width (A)
         
         add_mbox(1000,20,0,0);                  %1000 A GaAs Cap (surface)
         add_mbox(1350,50,0.25,0);              %1350 A AlGaAs
         add_mbox(2,1,0.25,0);                  %2 A AlGaAs to increase grid resolution
         add_mbox(2,1,0.25,DeltaDopF);           %2 A delta-doped AlGaAs
         add_mbox(2,1,0.25,0);                  %2 A AlGaAs
-        add_mbox(FBarr,20,0.25,0);               %800 A AlGaAs spacer
+        add_mbox(FBarr,20,0.25,0);               %FBarr A AlGaAs spacer
         
-        QW = 750;
+        QW = 350;
 
-        add_mbox(QW,5,0,0);                    %650 A GaAs quantum well
+        add_mbox(QW,5,0,0);                    %350 A GaAs quantum well
         
-        add_mbox(BBarr,20,0.25,0);               %800 A AlGaAs spacer
+        add_mbox(BBarr,20,0.25,0);               %BBarr A AlGaAs spacer
         add_mbox(2,1,0.25,0);                  %2 A AlGaAs
         add_mbox(2,1,0.25, DeltaDopB);          %2 A delta-doped AlGaAs
         add_mbox(2,1,0.25,0);                  %2 A AlGaAs to increase grid resolution
@@ -169,17 +169,18 @@ for i = 1:l_BG
         add_mbox(800, 10, 0.0, -7.5E17);        %bulk doped back gate
         add_mbox(300, 50, 0, 0);                %300A GaAs cap 
 
-        
+        %2350 + 6 + Fbarr
         
         add_bias([500, 2100 + FBarr], 3);                    %Make fermi energy between top gate and QW pinned to mid gap
         add_bias([2500 + FBarr + QW, 14800], 3);                  %Make fermi energy between bottom gate and QW pinned to mid gap
-        add_qbox([2250+FBarr, 2350+FBarr + QW],5,3, GE +XE + LE);      %set quantum box onto quantum well
+        add_qbox([2250+FBarr, 2400+FBarr + QW],5,3, GE +XE + LE);      %set quantum box onto quantum well
         add_pbox([1800, 4000 + FBarr + BBarr],CB);                    %Graph charge density in well
         add_pbox([0 15700],CB);                      %Graph charge density throughout structure
 
 
         add_bias([0,500], FrontGate(j));                             %Set front gate potential
         add_bias([12200+QW+FBarr+BBarr, 16000], BackGate(i));       %Set bottom gate potential
+        %add_bias([10000+QW+FBarr+BBarr, 16000], BackGate(i));       %Set bottom gate potential
         add_boundary(LEFT, POTENTIAL, 0);            %Set Potential at surface = 0 (Bias is what creates front gate voltage)
         add_boundary(RIGHT, FIELD, 0);               %Set E field at the bulk of the device = 0
 
@@ -280,7 +281,7 @@ for i = 1:l_BG
         Kb = 8.61733E-5;   %Boltzmann Constant in eV/K
         T = 4;  %The termperature used to calculate THERMAL BROADENING ONLY
                 %to change the environmental temperature, see initaquila.
-        Broadening = [3, -3];  %Array: For each element "a", the simulation will
+        Broadening = [];  %Array: For each element "a", the simulation will
                           %add a*Kb*T to the fermi level then calculate
                           %which subbands are occupied. 
                            
@@ -349,22 +350,29 @@ for i = 1:l_BG
         % What is the effective E field at the edges of our material?
         % Note that breakdown E field in GaAs is 4E5 V/cm
         
-        Data.Etop(i,j) = ((aquila_material.ec(2) - phi(2) - ...
-            aquila_material.ec(1) + phi(1))/(aquila_structure.xpos(2) ...
-            - aquila_structure.xpos(1)))*(-1.0e8);
+        %3050, 120
+        %2975, 116
+
+        %4028, 245
+        %3650, 226
+
+        Data.Etop(i,j) = ((-aquila_material.ec(120) + phi(120) + ...
+            aquila_material.ec(116) - phi(116))/(aquila_structure.xpos(120) ...
+            - aquila_structure.xpos(116)))*(1.0e8);
                       % Mulitply by 1.0e8 to convert from V/A to V/cm
-        Data.Ebot(i,j) = ((aquila_material.ec(end-100) - phi(end-100) - ...
-            aquila_material.ec(end-101) + phi(end-101))/(aquila_structure.xpos(end - 100) ...
-            - aquila_structure.xpos(end - 101)))*(-1.0e8);
+        Data.Ebot(i,j) = ((-aquila_material.ec(245) + phi(245) + ...
+            aquila_material.ec(226) - phi(226))/(aquila_structure.xpos(245) ...
+            - aquila_structure.xpos(226)))*(1.0e8);
                       % Mulitply by 1.0e8 to convert from V/A to V/cm
         
-
-
+        %1.602e-19
+        
         %Record how close the E field at edges of the device get to the
         %breakdown E field for GaAs
         Data.Breakdown (i,j) = max([abs(Data.Etop(i,j)/4e5) , abs(Data.Ebot(i,j)/4e5)]);
         %Records the % of breakdown E field reached for run i,j
-
+        
+        Data.struct = aquila_structure.xpos;
        
 
     end
@@ -387,7 +395,7 @@ plot(aquila_subbands.structure(1).xpos,[aquila_subbands.ge(1).psi(1:l)' ...
 
 %%%%Plot subband energies, the fermi energy, and thermal broadening%%%%%%
 
-%{
+
 %Find the slice of xpos array which corresponds to our quantum well qbox
 fi = find(aquila_structure.xpos == aquila_subbands.structure(1).xpos(1));
 li = find(aquila_structure.xpos == aquila_subbands.structure(1).xpos(end));
@@ -399,20 +407,33 @@ cb= aquila_material.ec(fi:li)-phi(fi:li);
 figure
 plot(aquila_subbands.structure(1).xpos, cb); %Plot Conduction Band
 hold on
+lw = 1.5 %plot linewidth
+
 w = length(aquila_subbands.structure(1).xpos);
-ylim([aquila_subbands.ge.E(1)- 0.005, aquila_subbands.ge.E(3) + 0.001]); %Set y-axis limits to be more zoomed in on subbands
-plot(aquila_subbands.structure(1).xpos, ones(w,1)*aquila_control.Efermi); %Graph fermi energy
+ylim([-0.81, -0.75])
+xlim([3100,3550])
+%ylim([aquila_subbands.ge.E(1)- 0.01, aquila_subbands.ge.E(2) + 0.01]); %Set y-axis limits to be more zoomed in on subbands
+plot(aquila_subbands.structure(1).xpos, ones(w,1)*aquila_control.Efermi, 'LineWidth', lw); %Graph fermi energy
 %Graph Subband Energies
-plot(aquila_subbands.structure(1).xpos, ones(w,1)*aquila_subbands.ge.E(1), 'Color', 'g', 'LineWidth', 1);
-plot(aquila_subbands.structure(1).xpos, ones(w,1)*aquila_subbands.ge.E(2), 'Color', 'g', 'LineWidth', 1);
-plot(aquila_subbands.structure(1).xpos, ones(w,1)*aquila_subbands.ge.E(3), 'Color', 'g', 'LineWidth', 1);
+plot(aquila_subbands.structure(1).xpos, ones(w,1)*aquila_subbands.ge.E(1), 'Color', 'g', 'LineWidth', lw);
+plot(aquila_subbands.structure(1).xpos, ones(w,1)*aquila_subbands.ge.E(2), 'Color', 'g', 'LineWidth', lw);
+%plot(aquila_subbands.structure(1).xpos, ones(w,1)*aquila_subbands.ge.E(3), 'Color', 'g', 'LineWidth', lw);
+%Graph WaveFunctions
+l=length(aquila_subbands.structure(1).xpos); %length of 1 wavefunction (in ge(1).psi)
+plot(aquila_subbands.structure(1).xpos,[aquila_subbands.ge(1).psi(1:l)' ...
+      aquila_subbands.ge(1).psi(l+1:2*l)'].^2 + [aquila_subbands.ge.E(1), aquila_subbands.ge.E(2)], 'Color', 'magenta','LineWidth', 1,'LineStyle', '--')
+%plot(aquila_subbands.structure(1).xpos, [aquila_subbands.ge(1).psi(1:l)'].^2 + [aquila_subbands.ge.E(1)], 'Color', 'magenta','LineWidth', 1,'LineStyle', '--')
+
+
 %Graph vertical black bar showing fermi energy +/- 3KbT
-plot([aquila_subbands.structure(1).xpos(end-25),aquila_subbands.structure(1).xpos(end-25)], ...
-    [aquila_control.Efermi - (3*Kb*T), aquila_control.Efermi + (3*Kb*T)], 'LineWidth', 2, 'color', 'black')
+%plot([aquila_subbands.structure(1).xpos(end-25),aquila_subbands.structure(1).xpos(end-25)], ...
+%    [aquila_control.Efermi - (3*Kb*T), aquila_control.Efermi + (3*Kb*T)], 'LineWidth', 2, 'color', 'black')
 
 xlabel("Distance (A)");
 ylabel("Energy (eV)");
-title("T = " + T  + "K   V_t_o_p = " + FrontGate + "V   V_b_o_t = " + BackGate + "V");
+%title("T = " + T  + "K   V_t_o_p = " + FrontGate + "V   V_b_o_t = " + BackGate + "V");
+%title("V_t_o_p = " + FrontGate + "V   V_b_o_t = " + BackGate + "V");
+
 hold off
-%}
+
 end

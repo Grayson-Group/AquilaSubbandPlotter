@@ -15,13 +15,23 @@ written by Dr. Martin Rother,  martin.rother@web.de
 %BackGate: Back gate values to be iterated over (array)
 
 Dopant = -2E11;
-FrontGate = [-0.2, -0.1, 0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6];
-BackGate = [-4, -3.5, -3, -2.5, -2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2];
+%Dopant1 = -1.7E11;
+%Dopant2 = -2.8E11;
+Dopant1 = -1.2E11;
+Dopant2 = -2.8E11;
+
+FrontGate = [0, 0.1, 0.2, 0.3, 0.32, 0.34, 0.36, 0.38, 0.4, 0.5, 0.6, 0.7];
+BackGate = [-0.2, -0.1, -0.05, 0, 0.05, 0.1, 0.2];
+
+%FrontGate = [-0.2, -0.1, 0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6];
+%BackGate = [-4, -3.5, -3, -2.5, -2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2];
 
 %FrontGate = linspace(-0.2, 0.6, 13);
 %BackGate = linspace(0.5, 2, 13);
-%FrontGate = [2.2];
-%BackGate = [1];
+FrontGate = [-0.8, -0.2, 0, 1.2];
+BackGate = [-2, 1, 3];
+FrontGate = [0.95]
+BackGate = [0]
 
 
 
@@ -113,6 +123,8 @@ title("75nm QW 0.25Al");
 
 %%%Plot Subband Crossover (+ 3KbT)
     %Spread the matrix data into vectors so they may be plotted easily
+
+%{
 figure %Create new graph window
 
     %Spread the matrix data into vectors so they may be plotted easily
@@ -136,7 +148,7 @@ title("75nm QW -3KbT  0.25Al");
 
 
 %saveas(gcf, filename3)
-
+%}
 
 
 
@@ -147,17 +159,28 @@ title("75nm QW -3KbT  0.25Al");
 %%%% Plot a color map of electron density in QW as a function of gate voltage  %%%%
 figure
 
+
 contourf(Data.Vbot, Data.Vtop, Data.WellConc, "ShowText", true, "LabelFormat", "%0.3G")
-xlabel("Back Gate (V)")
-ylabel("Front Gate (V)")
+xlabel("V_B (V)")
+ylabel("V_T (V)")
 xlim([min(Data.Vbot, [], "all") max(Data.Vbot, [], "all")])
 ylim([min(Data.Vtop, [], "all") max(Data.Vtop, [], "all")])
-title("QW Carrier Conc (cm^-^2)")
+title("QW Carrier Conc")
 
+
+%{
+contourf(Data.Ebot, Data.Etop, Data.WellConc, "ShowText", true, "LabelFormat", "%0.3G")
+xlabel("Bottom Electric Field E_B (Vcm^-^1)")
+ylabel("Top Electric Field E_T (Vcm^-^1)")
+
+xlim([min(Data.Ebot, [], "all") max(Data.Ebot, [], "all")])
+ylim([min(Data.Etop, [], "all") max(Data.Etop, [], "all")])
+set ( gca, 'ydir', 'reverse' )
+title("QW Carrier Concentration")
 
 %saveas(gcf, filename4)
-
-
+        
+%}
 
 
 
@@ -331,8 +354,8 @@ function PrettyPlot(Vbot, Vtop)
     ylabel("Front Gate (V)")
     %xlim([-4, 2])
     %ylim([-0.2, 1.6])
-    xlim([min(Vbot, [], "all") max(Vbot, [], "all")])
-    ylim([min(Vtop, [], "all") max(Vtop, [], "all")])
+    xlim([min(Vbot, [], "all"), max(Vbot, [], "all")])
+    ylim([min(Vtop, [], "all"), max(Vtop, [], "all")])
 end
 
 
